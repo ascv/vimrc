@@ -38,6 +38,11 @@ set background=dark
 set sessionoptions-=options
 set scrolloff=5
 set autoread
+set nofoldenable
+
+augroup vimrc
+  autocmd!
+augroup END
 
 let g:PHP_vintage_case_default_indent = 1
 let g:PHP_default_indenting = 1
@@ -63,6 +68,7 @@ let g:gitgutter_sign_added = '+ '
 let g:gitgutter_sign_modified = '𝚫 '
 let g:gitgutter_sign_removed = '↷ '
 let g:gitgutter_sign_modified_removed = 'Ⴕ '
+nnoremap <leader>g :GitGutterPreviewHunk<CR>
 
 set path=.,,.;,;,/usr/include/SDL
 " for gf and related, search in file's dir, then cwd, then file's dir's parents, then cwd's parents
@@ -70,16 +76,7 @@ set path=.,,.;,;,/usr/include/SDL
 " ignore leading slash when using gf
 nnoremap gf :exe 'find' substitute(expand('<cfile>'), '^/', '', '')<CR>
 
-" powerline!
-"set rtp+=~/SJCONF/powerline/powerline/bindings/vim
-"if ! has('gui_running')
-"    set ttimeoutlen=10
-"    augroup FastEscape
-"        autocmd!
-"        au InsertEnter * set timeoutlen=300
-"        au InsertLeave * set timeoutlen=1000
-" augroup END
-"endif
+" powerline! or was it?
 set laststatus=2 " Always display the statusline in all windows
 set noshowmode " Hide the default mode text (e.g. -- INSERT -- below the statusline)
 
@@ -119,14 +116,60 @@ if version >= 703
   set concealcursor=niv   " Even conceal text while the cursor is on the same line, in normal, insert, visual
 endif
 
-" Pathogen bundles enable!
-call pathogen#infect()
-
 " incsearch plugin
 if version >= 703
   map /  <Plug>(incsearch-forward)
   map ?  <Plug>(incsearch-backward)
   map g/ <Plug>(incsearch-stay)
+endif
+
+
+"NeoBundle Scripts-----------------------------
+set runtimepath+=/home/jwilson/.vim/bundle/neobundle.vim/
+call neobundle#begin(expand('/home/jwilson/.vim/bundle'))
+
+" Let NeoBundle manage NeoBundle
+" Required:
+NeoBundleFetch 'Shougo/neobundle.vim'
+
+" Add or remove your Bundles here:
+NeoBundle 'tpope/vim-repeat'
+NeoBundle 'tpope/vim-fugitive'
+NeoBundle 'tpope/vim-surround'
+NeoBundle 'tpope/vim-commentary'
+NeoBundle 'ctrlpvim/ctrlp.vim'
+NeoBundle 'flazz/vim-colorschemes'
+NeoBundle 'maxbrunsfeld/vim-yankstack'
+NeoBundle 'superjer/modefiles'
+NeoBundle 'scrooloose/syntastic'
+NeoBundle 'bling/vim-airline'
+NeoBundle 'airblade/vim-gitgutter'
+NeoBundle 'dietsche/vim-lastplace'
+NeoBundle 'haya14busa/incsearch.vim'
+NeoBundle 'ciaranm/detectindent'
+NeoBundle 'kergoth/vim-hilinks'
+"NeoBundle 'ervandew/supertab'
+"NeoBundle 'vim-scripts/swap-parameters'
+
+" Removed when changing to NeoBundle. Add back?
+"DidYouMean
+"PIV "fix-PIV.sh
+"neomake
+"vdebug
+"vim-enhanced-diff
+
+" Required:
+call neobundle#end()
+
+" If there are uninstalled bundles found on startup,
+" this will conveniently prompt you to install them.
+NeoBundleCheck
+"End NeoBundle Scripts-------------------------
+
+
+" Load matchit.vim, but only if the user hasn't installed a newer version.
+if !exists('g:loaded_matchit') && findfile('plugin/matchit.vim', &rtp) ==# ''
+  runtime! macros/matchit.vim
 endif
 
 set t_Co=256
@@ -154,10 +197,11 @@ hi Search term=none ctermfg=255 ctermbg=202
 hi Todo ctermbg=93
 hi DiffAdded ctermfg=82
 hi javaScript ctermfg=255
+hi Folded ctermbg=235 ctermfg=232
 
 " Yankstack
 let g:yankstack_map_keys = 0
-call yankstack#setup()
+"call yankstack#setup()
 nmap <C-P> <Plug>yankstack_substitute_older_paste
 nmap <C-N> <Plug>yankstack_substitute_newer_paste
 
@@ -173,11 +217,11 @@ let g:syntastic_c_include_dirs = [ '/home/jwilson/SPARToR/engine/', '/home/jwils
 
 filetype on                                                   " Automatically detect file types
 filetype plugin indent on                                     " Enable filetype plugins, indent plugins
-autocmd FileType mail,human set formatoptions+=t textwidth=72 " Wrap mail messages to 72 chars
-autocmd FileType c,cpp,slang,php,inc set cindent              " Use C-style indenting
-autocmd FileType html set formatoptions+=tl                   " l: do not break long lines
-autocmd FileType make set noexpandtab shiftwidth=8            " Makefiles need real tabs
-autocmd FileType vim setlocal keywordprg=:help                " Vim help in vim files
+autocmd vimrc FileType mail,human set formatoptions+=t textwidth=72 " Wrap mail messages to 72 chars
+autocmd vimrc FileType c,cpp,slang,php,inc set cindent              " Use C-style indenting
+autocmd vimrc FileType html set formatoptions+=tl                   " l: do not break long lines
+autocmd vimrc FileType make set noexpandtab shiftwidth=8            " Makefiles need real tabs
+autocmd vimrc FileType vim setlocal keywordprg=:help                " Vim help in vim files
 
 " Set correct filetype when editing the current bash command line in Vim
 if expand('%:t') =~?'bash-fc-\d\+'
@@ -187,29 +231,23 @@ endif
 let php_baselib = 1	" Highlight PHP funcs
 
 " Syntax .inc files like .php
-augroup inc
-  autocmd BufRead *.inc set filetype=php
-augroup END
+autocmd vimrc BufRead *.inc set filetype=php
 
 " Syntax .mhtm
-augroup mhtm
-  autocmd BufRead *.mhtm set filetype=mustache
-augroup END
+autocmd vimrc BufRead *.mhtm set filetype=mustache
 
-augroup wiki
-  autocmd BufRead *.wiki set concealcursor=nv
-augroup END
+autocmd vimrc BufRead *.wiki set concealcursor=nv
 
 " run syntax check on :mak in PHP files, and interpret errors
-autocmd FileType php set makeprg=php\ %
-autocmd FileType php set errorformat=%m\ in\ %f\ on\ line\ %l
+autocmd vimrc FileType php set makeprg=php\ %
+autocmd vimrc FileType php set errorformat=%m\ in\ %f\ on\ line\ %l
 
 " run python with :mak in .py files
-autocmd FileType python set makeprg=python\ %
+autocmd vimrc FileType python set makeprg=python\ %
 
 " Autocomplete CSS and PHP stuff
-autocmd FileType css set omnifunc=csscomplete#CompleteCSS
-autocmd FileType php set omnifunc=phpcomplete#CompletePHP
+autocmd vimrc FileType css set omnifunc=csscomplete#CompleteCSS
+autocmd vimrc FileType php set omnifunc=phpcomplete#CompletePHP
 
 " Fix nasty PIV defaults
 function! Fix_PIV()
@@ -220,7 +258,7 @@ function! Fix_PIV()
   unlet! PHP_autoformatcomment
   unlet! php_sync_method
 endfunction
-autocmd FileType php call Fix_PIV()
+autocmd vimrc FileType php call Fix_PIV()
 
 " Use S instead of ys for surround.vim, since S is redundant for cc anyways
 nmap S ys
@@ -279,6 +317,14 @@ function! ReplaceNext()
 endfu
 nnoremap gr :cal ReplaceNext()<CR>
 
+function! InsertOnce(iora)
+  let ch = nr2char(getchar())
+  exec "normal! " . a:iora . ch
+  silent! call repeat#set(a:iora . ch . "\e")
+endfu
+nnoremap 1i :cal InsertOnce("i")<CR>
+nnoremap 1a :cal InsertOnce("a")<CR>
+
 " Spacebar inserts a single space, no redo
 nnoremap <space> :cal ForgetNormal("i \el")<CR>
 
@@ -288,13 +334,6 @@ vnoremap <space> :cal ForgetNormal("gvI \egvlolo")<CR>
 " Backspace removes all extraneos spaces on the line(s)
 vnoremap <BS> :<C-U>let lol=@/<CR>:<C-U>let omg=&hls<CR>:<C-U>let &hls=0<CR>:'<,'>s/\v([^ ] ) +\|$/\1/<CR>:'<,'>s/\v *$/<CR>:let &hls=omg<CR>:let @/=lol<CR>
 nnoremap <BS> :let lol=@/<CR>:let omg=&hls<CR>:let &hls=0<CR>:s/\v([^ ] ) +\|$/\1/<CR>:s/\v *$/<CR>:let &hls=omg<CR>:let @/=lol<CR>
-
-" When reopening a file, always jump to the last cursor position
-autocmd BufReadPost *
-\ if line("'\"") > 0 && line ("'\"") <= line("$") |
-\   exe "normal! g'\"" |
-\   exe "normal! z." |
-\ endif
 
 func! PhpColors()
   syn match phpOperatorS "\$" contained display
@@ -370,7 +409,7 @@ func! PhpColors()
     syn match NENot contained containedin=phpNE "!" display conceal cchar=
     syn match NEEqual contained containedin=phpNE "=" display conceal cchar=
     syn match phpDollar '\$' contained containedin=phpVarSelector,phpVarSelectorS cchar=⌁ conceal
-    hi Conceal ctermfg=196 ctermbg=none
+    hi Conceal ctermfg=196 ctermbg=233
   endif
 
   " Make literal wacky unicode characters obvious!
@@ -388,34 +427,51 @@ func! PhpColors()
   hi TrailingWS ctermbg=darkred
 endfun
 
-autocmd FileType php call PhpColors()
+autocmd vimrc FileType php call PhpColors()
 
-autocmd FileType vim hi Statement ctermfg=202
+autocmd vimrc FileType vim hi Statement ctermfg=202
 
 function! CColors()
   syn region cBracket transparent matchgroup=cBracketX start='\[\|<::\@!' end=']\|:>' contains=ALLBUT,@cParenGroup,cErrInParen,cCppParen,cCppBracket,cCppString,@Spell
   syn match cParenX '[()]'
+
+  " Make literal wacky unicode characters obvious!
+  syn match FakeComp "[≤≥≠ ]" contained containedin=Region display
+  hi link FakeComp Fake
+
   if version >= 703
     syn match ArrowHead contained ">" conceal cchar=▶
     syn match ArrowTail contained "-" conceal cchar=─
+    syn match LTELess   contained "<" conceal cchar=
+    syn match LTEEqual  contained "=" conceal cchar=
+    syn match GTELess   contained ">" conceal cchar=
+    syn match GTEEqual  contained "=" conceal cchar=
+    syn match NENot     contained "!" conceal cchar=
+    syn match NEEqual   contained "=" conceal cchar=
   endif
+
   syn match ArrowFull "->" contains=ArrowHead,ArrowTail
-  syn cluster cParenGroup   add=ArrowTail,ArrowHead
-  syn cluster cPreProcGroup add=ArrowTail,ArrowHead
-  syn cluster cMultiGroup   add=ArrowTail,ArrowHead
-  hi cBracketX ctermfg=82
-  hi cParenX ctermfg=202
-  hi Repeat ctermfg=220
-  hi Conditional ctermfg=220
-  hi Conceal ctermfg=196 ctermbg=16
-  hi Label ctermfg=220
-  hi Normal ctermfg=255
-  hi Macro ctermfg=201
-  hi PreCondit ctermfg=202
+  syn match CLTEFull  "<=" contains=LTEEqual,LTELess
+  syn match CGTEFull  ">=" contains=GTEEqual,GTELess
+  syn match CNEFull   "!=" contains=NENot,NEEqual
+
+  syn cluster cParenGroup   add=ArrowTail,ArrowHead,LTEEqual,LTELess,GTEEqual,GTELess,NENot,NEEqual
+  syn cluster cPreProcGroup add=ArrowTail,ArrowHead,LTEEqual,LTELess,GTEEqual,GTELess,NENot,NEEqual
+  syn cluster cMultiGroup   add=ArrowTail,ArrowHead,LTEEqual,LTELess,GTEEqual,GTELess,NENot,NEEqual
+
+  hi cBracketX    ctermfg=82
+  hi cParenX      ctermfg=202
+  hi Repeat       ctermfg=220
+  hi Conditional  ctermfg=220
+  hi Conceal      ctermfg=196 ctermbg=233
+  hi Label        ctermfg=220
+  hi Normal       ctermfg=255
+  hi Macro        ctermfg=201
+  hi PreCondit    ctermfg=202
   hi StorageClass ctermfg=202
-  hi Type ctermfg=202
-  hi PreProc ctermfg=202
-  hi Character ctermfg=82
+  hi Type         ctermfg=202
+  hi PreProc      ctermfg=202
+  hi Character    ctermfg=82
 
   call Color256Hax()
 
@@ -423,7 +479,7 @@ function! CColors()
   hi MatchParen ctermfg=220 ctermbg=196
 endfun
 
-autocmd FileType c call CColors()
+autocmd vimrc FileType c call CColors()
 
 " Indentation-level text objects with vai, vii, yai, yii, dai, dii, etc.
 onoremap <silent>ai :<C-u>cal IndTxtObj(0)<CR>
@@ -557,11 +613,9 @@ vnoremap <C-E>    :<C-U>try \| silent! '<,'>move '>+ \| exe "normal! `[V`]" \| f
 vnoremap <C-H>  d:<C-U>try \| silent! exe "normal! h" \| finally \| exe "normal! P`[<C-V><C-V>`]" \| endtry<CR>
 vnoremap <C-L> dp`[<C-V>`]
 
-augroup texdef
-  autocmd BufRead *.png.txt set filetype=texdef
-augroup END
+autocmd vimrc BufRead *.png.txt set filetype=texdef
 
-autocmd FileType texdef call TexDefColors()
+autocmd vimrc FileType texdef call TexDefColors()
 
 function! TexDefColors()
   syn keyword Keyword anchor pos size cols flipx flipy floor bump
@@ -573,18 +627,14 @@ function! TexDefColors()
   syn match Comment '^\s*#.*$'
 endfunction
 
-"///////////////////////////////////////////////////////////////////
-augroup texdef                                                     "
-  autocmd BufRead *col-change* set filetype=colchange              "
-augroup END                                                        "
-autocmd FileType colchange call ColChangeColors()                  "
-function! ColChangeColors()                                        "
-  syn match Function '\v^ *\+.*'                                   "
-  syn match Statement '\v^ *-.*'                                   "
-  syn match Question '\v^ *\~.*' contains=Number                   "
-  syn match Number '\v\~ *\zs[^ ]*' contained                      "
-endfunction                                                        "
-"///////////////////////////////////////////////////////////////////
+autocmd vimrc BufRead *col-change* set filetype=colchange
+autocmd vimrc FileType colchange call ColChangeColors()
+function! ColChangeColors()
+  syn match Function '\v^ *\+.*'
+  syn match Statement '\v^ *-.*'
+  syn match Question '\v^ *\~.*' contains=Number
+  syn match Number '\v\~ *\zs[^ ]*' contained
+endfunction
 
 " Decide whether to syntax hilite from the top or not
 function! LargeFileSmallFile()
@@ -597,7 +647,7 @@ function! LargeFileSmallFile()
   endif
 endfunction
 
-autocmd BufReadPost * call LargeFileSmallFile()
+autocmd vimrc BufReadPost * call LargeFileSmallFile()
 
 " Readable colors for vimdiff
 "highlight DiffAdd        cterm=none           ctermbg=0
@@ -610,7 +660,7 @@ autocmd BufReadPost * call LargeFileSmallFile()
 "highlight FoldColumn     term=standout cterm=bold,reverse ctermfg=0 ctermbg=0
 
 " Use matchit in mustache/htm files
-autocmd FileType mustache source ~/.vim/plugin/matchit.vim
+autocmd vimrc FileType mustache source ~/.vim/plugin/matchit.vim
 
 " Don't lose the selection when changing indentation
 vnoremap > >gv
@@ -624,7 +674,7 @@ vnoremap R r gvI
 
 " Close the scratch window (if open) when exiting insert mode (but not for the
 " command window (or any vimscript buffer really))
-autocmd InsertLeave * if pumvisible() == 0|silent! pclose|endif
+autocmd vimrc InsertLeave * if pumvisible() == 0|silent! pclose|endif
 
 " Adjustment for 256 color terms
 function! Color256Hax()
@@ -689,13 +739,13 @@ nnoremap Q i<CR><C-C>
 " Figure out files' indentation patterns automatically
 let g:detectindent_preferred_expandtab = 1
 let g:detectindent_preferred_indent = 2
-autocmd BufReadPost * :DetectIndent
+autocmd vimrc BufReadPost * :DetectIndent
 
 " Quick calculator in insert mode
 inoremap <C-Q> <C-O>diW<C-R>=<C-R>"<CR>
 
-autocmd BufRead *.c nnoremap <CR> :e <C-R>%<BS>h<CR>
-autocmd BufRead *.h nnoremap <CR> :e <C-R>%<BS>c<CR>
+autocmd vimrc BufRead *.c nnoremap <buffer> <CR> :e <C-R>%<BS>h<CR>
+autocmd vimrc BufRead *.h nnoremap <buffer> <CR> :e <C-R>%<BS>c<CR>
 
 " Search for selected text, forwards or backwards.
 vnoremap <silent> * :<C-U>
@@ -755,8 +805,8 @@ noremap <F6> :nohls<CR>
 nnoremap <F7> gv:!php -a \| tail -n +3<CR>
 vnoremap <F7> :!php -a \| tail -n +3<CR>
 
-autocmd FileType python nnoremap <F7> gv:!python -i 2>/dev/null<CR>
-autocmd FileType python vnoremap <F7> :!python -i 2>/dev/null<CR>
+autocmd vimrc FileType python nnoremap <F7> gv:!python -i 2>/dev/null<CR>
+autocmd vimrc FileType python vnoremap <F7> :!python -i 2>/dev/null<CR>
 
 " F8 toggle paste / nopaste
 set pastetoggle=<F8>
@@ -866,6 +916,9 @@ nnoremap <leader>w Go// vim: ts=4 sw=4 et<Esc>:set ts=4 sw=4 et<CR>
 " modeline buffer
 " modeline buffer
 " modeline buffer
+
+" run some spartors
+nnoremap <leader>2 :!./spartor<space>window_2<space>&<CR>:!./spartor<space>window_2<space>&<CR><CR>
 
 nnoremap gb :cal SwapParams('left')<CR>
 nnoremap gs :cal SwapParams('right')<CR>
