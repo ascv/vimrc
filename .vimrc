@@ -70,8 +70,8 @@ let g:gitgutter_sign_removed = '↷ '
 let g:gitgutter_sign_modified_removed = 'Ⴕ '
 nnoremap <leader>g :GitGutterPreviewHunk<CR>
 
-set path=.,,.;,;,/usr/include/SDL
 " for gf and related, search in file's dir, then cwd, then file's dir's parents, then cwd's parents
+set path=.,,.;,;,/usr/include/SDL2
 
 " ignore leading slash when using gf
 nnoremap gf :exe 'find' substitute(expand('<cfile>'), '^/', '', '')<CR>
@@ -82,14 +82,14 @@ set noshowmode " Hide the default mode text (e.g. -- INSERT -- below the statusl
 
 " airline!
 let g:airline_powerline_fonts=1
-"let g:airline_left_sep=''
-"let g:airline_right_sep=''
 let g:airline_detect_modified=1
 let g:airline_detect_paste=1
 let g:airline#extensions#whitespace#enabled=1
 let g:airline_theme='powerlineish'
 
-
+" get out of insert mode faster
+autocmd vimrc InsertEnter * set timeoutlen=150
+autocmd vimrc InsertLeave * set timeoutlen=1000
 
 " when does wundo and rundo become available?
 if version >= 703
@@ -123,7 +123,6 @@ if version >= 703
   map g/ <Plug>(incsearch-stay)
 endif
 
-
 "NeoBundle Scripts-----------------------------
 set runtimepath+=/home/jwilson/.vim/bundle/neobundle.vim/
 call neobundle#begin(expand('/home/jwilson/.vim/bundle'))
@@ -142,13 +141,13 @@ NeoBundle 'flazz/vim-colorschemes'
 NeoBundle 'maxbrunsfeld/vim-yankstack'
 NeoBundle 'superjer/modefiles'
 NeoBundle 'scrooloose/syntastic'
-NeoBundle 'bling/vim-airline'
+NeoBundle 'superjer/vim-airline'
 NeoBundle 'airblade/vim-gitgutter'
 NeoBundle 'dietsche/vim-lastplace'
 NeoBundle 'haya14busa/incsearch.vim'
 NeoBundle 'ciaranm/detectindent'
 NeoBundle 'kergoth/vim-hilinks'
-"NeoBundle 'ervandew/supertab'
+NeoBundle 'ervandew/supertab'
 "NeoBundle 'vim-scripts/swap-parameters'
 
 " Removed when changing to NeoBundle. Add back?
@@ -171,6 +170,8 @@ NeoBundleCheck
 if !exists('g:loaded_matchit') && findfile('plugin/matchit.vim', &rtp) ==# ''
   runtime! macros/matchit.vim
 endif
+
+inoremap jj <Esc>
 
 set t_Co=256
 "set background=dark
@@ -213,7 +214,12 @@ let g:syntastic_enable_signs=1
 let g:syntastic_auto_loc_list=1
 let g:syntastic_disabled_filetypes=["c","cpp","javascript","js","json","css"]
 let g:loaded_syntastic_php_phpcs_checker=1 "no codesniffer, pls
-let g:syntastic_c_include_dirs = [ '/home/jwilson/SPARToR/engine/', '/home/jwilson/SPARToR/game/' ]
+let g:syntastic_c_include_dirs = [
+      \'/home/jwilson/SPARToR/engine',
+      \'/home/jwilson/SPARToR/game',
+      \'/usr/include/SDL2',
+      \'/home/jwilson/xscreensaver-5.15/utils',
+      \]
 
 filetype on                                                   " Automatically detect file types
 filetype plugin indent on                                     " Enable filetype plugins, indent plugins
@@ -231,23 +237,26 @@ endif
 let php_baselib = 1	" Highlight PHP funcs
 
 " Syntax .inc files like .php
-autocmd vimrc BufRead *.inc set filetype=php
+autocmd vimrc BufRead *.inc setlocal filetype=php
 
 " Syntax .mhtm
-autocmd vimrc BufRead *.mhtm set filetype=mustache
+autocmd vimrc BufRead *.mhtm setlocal filetype=mustache
 
-autocmd vimrc BufRead *.wiki set concealcursor=nv
+" Syntax is C for .h files, NOT C++ for crying out loud
+autocmd vimrc BufRead *.h setlocal filetype=c
+
+autocmd vimrc BufRead *.wiki setlocal concealcursor=nv
 
 " run syntax check on :mak in PHP files, and interpret errors
-autocmd vimrc FileType php set makeprg=php\ %
-autocmd vimrc FileType php set errorformat=%m\ in\ %f\ on\ line\ %l
+autocmd vimrc FileType php setlocal makeprg=php\ %
+autocmd vimrc FileType php setlocal errorformat=%m\ in\ %f\ on\ line\ %l
 
 " run python with :mak in .py files
-autocmd vimrc FileType python set makeprg=python\ %
+autocmd vimrc FileType python setlocal makeprg=python\ %
 
 " Autocomplete CSS and PHP stuff
-autocmd vimrc FileType css set omnifunc=csscomplete#CompleteCSS
-autocmd vimrc FileType php set omnifunc=phpcomplete#CompletePHP
+autocmd vimrc FileType css setlocal omnifunc=csscomplete#CompleteCSS
+autocmd vimrc FileType php setlocal omnifunc=phpcomplete#CompletePHP
 
 " Fix nasty PIV defaults
 function! Fix_PIV()
@@ -918,7 +927,13 @@ nnoremap <leader>w Go// vim: ts=4 sw=4 et<Esc>:set ts=4 sw=4 et<CR>
 " modeline buffer
 
 " run some spartors
-nnoremap <leader>2 :!./spartor<space>window_2<space>&<CR>:!./spartor<space>window_2<space>&<CR><CR>
+nnoremap <leader>2 :!./spartor console window_2 winpos_0_0 listen 2>host.log &<CR>
+                  \:!./spartor console window_2 winpos_1100_0 connect 2>client.log &<CR><CR>
+nnoremap <leader>3 :!./spartor console window_2 winpos_0_0 listen 2>host.log &<CR>
+                  \:!valgrind ./spartor console window_2 winpos_1100_0 connect<CR>
+nnoremap <leader>4 :!./spartor console window_2 winpos_1100_0 connect 2>client.log &<CR>
+                  \:!valgrind ./spartor console window_2 winpos_0_0 listen<CR>
+nnoremap <leader>k :!killall spartor<CR><CR>
 
 nnoremap gb :cal SwapParams('left')<CR>
 nnoremap gs :cal SwapParams('right')<CR>
