@@ -103,12 +103,12 @@ if version >= 703
   func! ReadUndo()
     let undofile = undofile(expand('%'))
     if filereadable(undofile)
-      let undofile = escape(undofile,'%')
+      let undofile = escape(undofile,'% ')
       exec "rundo " . undofile
     endif
   endfunc
   func! WriteUndo()
-    let undofile = escape(undofile(expand('%')),'%')
+    let undofile = escape(undofile(expand('%')),'% ')
     exec "wundo " . undofile
   endfunc
 
@@ -709,12 +709,6 @@ nnoremap d- dF_
 nnoremap d_ df_
 vnoremap - F_
 vnoremap _ f_
-
-" < and > to help del/replace text up to the next tag, or end of current tag?
-onoremap > t>
-onoremap < t<
-nnoremap d> dt>
-nnoremap d< dt<
 
 " insert mode hax!
 inoremap <C-H> <Left>
