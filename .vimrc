@@ -33,12 +33,12 @@ set gfn=Monospace\ 12   " GUI font
 set ttyfast             " send more text to the screen faster
 set cpo+=$              " delay erasing the changed text when using c commands
 set isfname=@,48-57,/,.,-,_,~ " file names can contain alphas (@), numbers (48-57), and some puncts
-set cino=L0,:0,l1
-set background=dark
-set sessionoptions-=options
-set scrolloff=5
-set autoread
-set nofoldenable
+set cino=L0,:0,l1       " (L) Jump labels at +0 columns, (:) case labels at +0 columns, (l) non-stupid after case labels
+set background=dark     " This is just a hint for Vim, it doesn't change the color
+set sessionoptions-=options " Sessions do NOT save options
+set scrolloff=5         " Can't get any closer to the top/bottom of the screen
+set autoread            " Automatically re-read when buffer has no change, but file on disk DOES change
+set nofoldenable        " No folding by default
 
 augroup vimrc
   autocmd!
@@ -46,18 +46,6 @@ augroup END
 
 let g:PHP_vintage_case_default_indent = 1
 let g:PHP_default_indenting = 1
-
-" vDebug for PHP
-let g:vdebug_keymap = {}
-let g:vdebug_keymap['get_context'] = '<leader>c'
-let g:vdebug_options = {}
-"let g:vdebug_options['watch_window_style'] = 'compact'
-
-" NEOCOMPLETE!
-let g:neocomplete#enable_at_startup = 1
-
-" BROLINK!
-let g:bl_serverpath = "ws://127.0.0.1:19001"
 
 " PIV PHP Integration for Vim
 let g:DisableAutoPHPFolding = 1
@@ -76,16 +64,33 @@ set path=.,,.;,;,/usr/include/SDL2
 " ignore leading slash when using gf
 nnoremap gf :exe 'find' substitute(expand('<cfile>'), '^/', '', '')<CR>
 
-" powerline! or was it?
+" better for airline
 set laststatus=2 " Always display the statusline in all windows
 set noshowmode " Hide the default mode text (e.g. -- INSERT -- below the statusline)
 
 " airline!
-let g:airline_powerline_fonts=1
+if $TERM_PROGRAM == 'Apple_Terminal'
+  let g:airline#left_sep = ' '
+  let g:airline#left_alt_sep = '|'
+  let g:airline_left_sep = ''
+  let g:airline_left_alt_sep = '|'
+  let g:airline_right_sep = ''
+  let g:airline_right_alt_sep = '|'
+else
+  let g:airline_powerline_fonts=1
+endif
 let g:airline_detect_modified=1
 let g:airline_detect_paste=1
 let g:airline#extensions#whitespace#enabled=1
 let g:airline_theme='powerlineish'
+
+" Don't let yankstack touch Y or S
+let g:yankstack_yank_keys = ['c', 'C', 'd', 'D', 's', 'x', 'X', 'y']
+
+" Figure out files' indentation patterns automatically
+let g:detectindent_preferred_expandtab = 1
+let g:detectindent_preferred_indent = 2
+
 
 " get out of insert mode faster
 autocmd vimrc InsertEnter * set timeoutlen=150
@@ -116,16 +121,9 @@ if version >= 703
   set concealcursor=niv   " Even conceal text while the cursor is on the same line, in normal, insert, visual
 endif
 
-" incsearch plugin
-if version >= 703
-  map /  <Plug>(incsearch-forward)
-  map ?  <Plug>(incsearch-backward)
-  map g/ <Plug>(incsearch-stay)
-endif
-
 "NeoBundle Scripts-----------------------------
-set runtimepath+=/home/jwilson/.vim/bundle/neobundle.vim/
-call neobundle#begin(expand('/home/jwilson/.vim/bundle'))
+set runtimepath+=$HOME/.vim/bundle/neobundle.vim/
+call neobundle#begin(expand('$HOME/.vim/bundle'))
 
 " Let NeoBundle manage NeoBundle
 " Required:
@@ -165,17 +163,19 @@ call neobundle#end()
 NeoBundleCheck
 "End NeoBundle Scripts-------------------------
 
+" map only if incsearch plugin is loaded!
+if version >= 703 && exists('g:loaded_incsearch')
+  map /  <Plug>(incsearch-forward)
+  map ?  <Plug>(incsearch-backward)
+  map g/ <Plug>(incsearch-stay)
+endif
 
 " Load matchit.vim, but only if the user hasn't installed a newer version.
 if !exists('g:loaded_matchit') && findfile('plugin/matchit.vim', &rtp) ==# ''
   runtime! macros/matchit.vim
 endif
 
-inoremap jj <Esc>
-
 set t_Co=256
-"set background=dark
-"colorscheme solarized
 colorscheme molokai
 hi RegexSpecial ctermfg=9
 hi RegexClass ctermfg=10
@@ -202,7 +202,6 @@ hi Folded ctermbg=235 ctermfg=232
 
 " Yankstack
 let g:yankstack_map_keys = 0
-"call yankstack#setup()
 nmap <C-P> <Plug>yankstack_substitute_older_paste
 nmap <C-N> <Plug>yankstack_substitute_newer_paste
 
@@ -215,10 +214,10 @@ let g:syntastic_auto_loc_list=1
 let g:syntastic_disabled_filetypes=["c","cpp","javascript","js","json","css"]
 let g:loaded_syntastic_php_phpcs_checker=1 "no codesniffer, pls
 let g:syntastic_c_include_dirs = [
-      \'/home/jwilson/SPARToR/engine',
-      \'/home/jwilson/SPARToR/game',
+      \'$HOME/SPARToR/engine',
+      \'$HOME/SPARToR/game',
       \'/usr/include/SDL2',
-      \'/home/jwilson/xscreensaver-5.15/utils',
+      \'$HOME/xscreensaver-5.15/utils',
       \]
 
 filetype on                                                   " Automatically detect file types
@@ -269,10 +268,6 @@ function! Fix_PIV()
 endfunction
 autocmd vimrc FileType php call Fix_PIV()
 
-" Use S instead of ys for surround.vim, since S is redundant for cc anyways
-nmap S ys
-nmap SS yss
-
 " Single Ctrl-H / Ctrl-L to switch to navigating the quickfix / location list
 " Ctrl-J / Ctrl-K to jump to the next / previous quickfix or location
 " Double Ctrl-H / Ctrl-L to go to the first / last quickfix or location
@@ -294,26 +289,11 @@ silent call CtrlArrowForQuickfix()
 nnoremap <C-H> :call CtrlArrowForQuickfix()<CR>
 nnoremap <C-L> :call CtrlArrowForLocation()<CR>
 
-" Ctrl-Q to use Command-T ------> OR ctrlp
+" Ctrl-Q to use ctrlp
 nnoremap <C-Q> :CommandT<CR>
 let g:CommandTCancelMap=['<C-Q>', '<C-C>', '<Esc>']
 let g:ctrlp_map = '<C-Q>'
 let g:ctrlp_match_window = 'max:30'
-
-" ZQ should qall!, and zq for softer version
-nnoremap ZQ :qall!<CR>
-nnoremap zq :qall<CR>
-
-"Prevent single letter commands from stomping the redo . command
-function! ForgetNormal(chr) range
-  exec "normal! ".a:chr
-endfu
-nnoremap X :cal ForgetNormal("X")<CR>
-"nnoremap x :cal ForgetNormal("x")<CR>
-"nnoremap ~ :cal ForgetNormal("~")<CR>
-
-nnoremap <Home> ^
-inoremap <Home> <C-O>^
 
 " grxy to replace next x with y, like fxry but REPEATABLY with . thanks to repeat.vim
 " Go Replace X with Y
@@ -331,8 +311,15 @@ function! InsertOnce(iora)
   exec "normal! " . a:iora . ch
   silent! call repeat#set(a:iora . ch . "\e")
 endfu
-nnoremap 1i :cal InsertOnce("i")<CR>
-nnoremap 1a :cal InsertOnce("a")<CR>
+
+" -X to insert X, +X to append X
+nnoremap - :cal InsertOnce("i")<CR>
+nnoremap + :cal InsertOnce("a")<CR>
+
+"Prevent a command from stomping the redo . command
+function! ForgetNormal(chr) range
+  exec "normal! ".a:chr
+endfu
 
 " Spacebar inserts a single space, no redo
 nnoremap <space> :cal ForgetNormal("i \el")<CR>
@@ -340,7 +327,7 @@ nnoremap <space> :cal ForgetNormal("i \el")<CR>
 " Insert spaces on multiple during block selection, and keep selection, no redo
 vnoremap <space> :cal ForgetNormal("gvI \egvlolo")<CR>
 
-" Backspace removes all extraneos spaces on the line(s)
+" Backspace removes all extraneous spaces on the line(s)
 vnoremap <BS> :<C-U>let lol=@/<CR>:<C-U>let omg=&hls<CR>:<C-U>let &hls=0<CR>:'<,'>s/\v([^ ] ) +\|$/\1/<CR>:'<,'>s/\v *$/<CR>:let &hls=omg<CR>:let @/=lol<CR>
 nnoremap <BS> :let lol=@/<CR>:let omg=&hls<CR>:let &hls=0<CR>:s/\v([^ ] ) +\|$/\1/<CR>:s/\v *$/<CR>:let &hls=omg<CR>:let @/=lol<CR>
 
@@ -438,6 +425,7 @@ endfun
 
 autocmd vimrc FileType php call PhpColors()
 
+" Make vimL look a bit better
 autocmd vimrc FileType vim hi Statement ctermfg=202
 
 function! CColors()
@@ -490,65 +478,8 @@ endfun
 
 autocmd vimrc FileType c call CColors()
 
-" Indentation-level text objects with vai, vii, yai, yii, dai, dii, etc.
-onoremap <silent>ai :<C-u>cal IndTxtObj(0)<CR>
-onoremap <silent>ii :<C-u>cal IndTxtObj(1)<CR>
-vnoremap <silent>ai :<C-u>cal IndTxtObj(0)<CR><Esc>gv
-vnoremap <silent>ii :<C-u>cal IndTxtObj(1)<CR><Esc>gv
-
-" c for curly-brace
-onoremap <silent>ac aB
-onoremap <silent>ic iB
-vnoremap <silent>ac aB
-vnoremap <silent>ic iB
-
-" j for WORD because I don't like typing capital W
-onoremap <silent>aj aW
-onoremap <silent>ij iW
-vnoremap <silent>aj aW
-vnoremap <silent>ij iW
-
-function! IndTxtObj(inner)
-  let curline = line(".")
-  let lastline = line("$")
-  let i = indent(line(".")) - &shiftwidth * (v:count1 - 1)
-  let i = i < 0 ? 0 : i
-  if getline(".") =~ "^\\s*$"
-    return
-  endif
-  let p = line(".") - 1
-  let nextblank = getline(p) =~ "^\\s*$"
-  while p > 0 && (nextblank || indent(p) >= i )
-    -
-    let p = line(".") - 1
-    let nextblank = getline(p) =~ "^\\s*$"
-  endwhile
-  if (!a:inner)
-    -
-  endif
-  normal! 0V
-  call cursor(curline, 0)
-  let p = line(".") + 1
-  let nextblank = getline(p) =~ "^\\s*$"
-  while p <= lastline && (nextblank || indent(p) >= i )
-    +
-    let p = line(".") + 1
-    let nextblank = getline(p) =~ "^\\s*$"
-  endwhile
-  if (!a:inner)
-    +
-  endif
-  normal! $
-endfunction
-
 " dx command deletes up to and including a [, <, ( or { and the matching }, ), > or ]
 nnoremap dx :<C-u>cal DelToBraceAndMatch()<CR>
-
-" d' command deletes up to and including a quote, and then from a second quote to the end of the line
-" effectively 'unwrapping' a string, i.e. for removing the    echo '...';    around a string
-" then removes any trailing whitespace and/or \n's
-nnoremap d' :let search_bak=@/<CR>:s/\v%#[^']*'([^"]*)'.*/\1<CR>:s/\v(\\n\|\s)*$<CR>:let @/=search_bak<CR>
-nnoremap d" :let search_bak=@/<CR>:s/\v%#[^"]*"([^"]*)".*/\1<CR>:s/\v(\\n\|\s)*$<CR>:let @/=search_bak<CR>
 
 function! DelToBraceAndMatch()
   let start = col(".")
@@ -561,47 +492,6 @@ function! DelToBraceAndMatch()
     exec "normal! d" . end . "|%xx"
   endif
 endfun
-
-" dc deletes this and matching brace, but not what's inside
-nnoremap dc :<C-u>cal DelBraceAndMatch()<CR>
-
-function! DelBraceAndMatch()
-  let tmp = &virtualedit
-  let &virtualedit = "all"
-  normal! %%
-  let start = col(".")
-  let startln = line(".")
-  normal! %
-  if startln == line(".") && start == col(".")
-    echo "DelBraceAndMatch: no % jump available"
-  elseif startln == line(".") && col(".") < start
-    normal! xhx
-  else
-    normal! xx
-  endif
-  let &virtualedit = tmp
-endfun
-
-"Save and load sessions 1-9 -- kind of like a quicksave / quickload!
-nnoremap z1 :mks! ~/.vim/sessions/1.vim<CR>
-nnoremap z2 :mks! ~/.vim/sessions/2.vim<CR>
-nnoremap z3 :mks! ~/.vim/sessions/3.vim<CR>
-nnoremap z4 :mks! ~/.vim/sessions/4.vim<CR>
-nnoremap z5 :mks! ~/.vim/sessions/5.vim<CR>
-nnoremap z6 :mks! ~/.vim/sessions/6.vim<CR>
-nnoremap z7 :mks! ~/.vim/sessions/7.vim<CR>
-nnoremap z8 :mks! ~/.vim/sessions/8.vim<CR>
-nnoremap z9 :mks! ~/.vim/sessions/9.vim<CR>
-nnoremap g1 :so ~/.vim/sessions/1.vim<CR>
-nnoremap g2 :so ~/.vim/sessions/2.vim<CR>
-nnoremap g3 :so ~/.vim/sessions/3.vim<CR>
-nnoremap g4 :so ~/.vim/sessions/4.vim<CR>
-nnoremap g5 :so ~/.vim/sessions/5.vim<CR>
-nnoremap g6 :so ~/.vim/sessions/6.vim<CR>
-nnoremap g7 :so ~/.vim/sessions/7.vim<CR>
-nnoremap g8 :so ~/.vim/sessions/8.vim<CR>
-nnoremap g9 :so ~/.vim/sessions/9.vim<CR>
-
 
 " Hold Ctrl and use the arrow keys to bubble selected or current line(s)
 " Works with block selection horizontally
@@ -636,15 +526,6 @@ function! TexDefColors()
   syn match Comment '^\s*#.*$'
 endfunction
 
-autocmd vimrc BufRead *col-change* set filetype=colchange
-autocmd vimrc FileType colchange call ColChangeColors()
-function! ColChangeColors()
-  syn match Function '\v^ *\+.*'
-  syn match Statement '\v^ *-.*'
-  syn match Question '\v^ *\~.*' contains=Number
-  syn match Number '\v\~ *\zs[^ ]*' contained
-endfunction
-
 " Decide whether to syntax hilite from the top or not
 function! LargeFileSmallFile()
   if line2byte(line("$")) < 10000000
@@ -658,28 +539,8 @@ endfunction
 
 autocmd vimrc BufReadPost * call LargeFileSmallFile()
 
-" Readable colors for vimdiff
-"highlight DiffAdd        cterm=none           ctermbg=0
-"highlight DiffChange     cterm=none           ctermbg=none
-"highlight DiffDelete     cterm=none ctermfg=0 ctermbg=none
-"highlight DiffText       cterm=none           ctermbg=0
-"
-"" Fold and FoldColumn colors
-"highlight Folded         term=standout ctermfg=0 ctermbg=7
-"highlight FoldColumn     term=standout cterm=bold,reverse ctermfg=0 ctermbg=0
-
-" Use matchit in mustache/htm files
-autocmd vimrc FileType mustache source ~/.vim/plugin/matchit.vim
-
-" Don't lose the selection when changing indentation
-vnoremap > >gv
-vnoremap < <gv
-
 " Make I work as expected in linewise visual mode
 vnoremap I <ESC>`<<C-V>`>I
-
-" R replaces block with whitespace and then inserts per line
-vnoremap R r gvI
 
 " Close the scratch window (if open) when exiting insert mode (but not for the
 " command window (or any vimscript buffer really))
@@ -688,8 +549,6 @@ autocmd vimrc InsertLeave * if pumvisible() == 0|silent! pclose|endif
 " Adjustment for 256 color terms
 function! Color256Hax()
   if &t_Co == 256
-    "hi Statement ctermfg=3
-
     " Spiffy colors for vimdiff / folding
     highlight DiffAdd        cterm=none            ctermbg=17
     highlight DiffDelete     cterm=none ctermfg=52 ctermbg=52
@@ -700,14 +559,10 @@ function! Color256Hax()
   endif
 endfunction
 
-" - and _ to jump to next/prev underscore char, or just to it in operator-pending mode
-nnoremap - F_
+" _ to jump to next underscore char, even in operator-pending mode
 nnoremap _ f_
-onoremap - T_
 onoremap _ t_
-nnoremap d- dF_
 nnoremap d_ df_
-vnoremap - F_
 vnoremap _ f_
 
 " insert mode hax!
@@ -731,7 +586,8 @@ cnoremap <C-Z> <C-K>
 " :w in insert mode WOO!
 inoremap :w<CR> <ESC>:w<CR>
 
-" Y for clipboard yank
+" Y for system clipboard yank
+" Be careful to keep yankstack from stealing these back!
 nnoremap Y "+y
 vnoremap Y "+y
 nnoremap YY "+yy
@@ -739,14 +595,14 @@ nnoremap YY "+yy
 " Q for opposite of J
 nnoremap Q i<CR><C-C>
 
-" Figure out files' indentation patterns automatically
-let g:detectindent_preferred_expandtab = 1
-let g:detectindent_preferred_indent = 2
-autocmd vimrc BufReadPost * :DetectIndent
+if exists('g:loaded_detectindent')
+  autocmd vimrc BufReadPost * :DetectIndent
+endif
 
 " Quick calculator in insert mode
-inoremap <C-Q> <C-O>diW<C-R>=<C-R>"<CR>
+inoremap <C-Q> <C-O>:let search_bak=@/<CR><C-O>v?[^-+*/0-9.]<CR>ld<C-R>=<C-R>"<CR><C-O>:let @/=search_bak<CR>
 
+" Enter key to switch between c and header file
 autocmd vimrc BufRead *.c nnoremap <buffer> <CR> :e <C-R>%<BS>h<CR>
 autocmd vimrc BufRead *.h nnoremap <buffer> <CR> :e <C-R>%<BS>c<CR>
 
@@ -764,24 +620,8 @@ vnoremap <silent> # :<C-U>
 
 " Ctrl-O-O in insert mode to get cursor inside block when this: if(...) ¬ { ¬ } <CURSOR>
 inoremap <C-O><C-O> <C-O>O
-inoremap <C-O><C-A> <C-O>A
-inoremap <C-O>a <C-O>A
-inoremap <C-O><C-I> <C-O>I
-inoremap <C-O>i <C-O>I
 
-" Jump to next / prev ( or ) with ( and )
-nnoremap ) :let search_bak=@/<CR>:cal search("[()]")<CR>:let @/=search_bak<CR>
-nnoremap ( :let search_bak=@/<CR>:cal search("[()]","b")<CR>:let @/=search_bak<CR>
-
-" Function Keys! F-Keys!
-" F1 reload .vimrc and rerun autocmds!
-nnoremap <F1> :so $MYVIMRC \| e %<CR>
-
-" F2 format SQL
-nnoremap <F2> V:!sqlformat --reindent -<CR>
-vnoremap <F2> :!sqlformat --reindent -<CR>
-
-" F3 to search-again in all files in Git
+" 1s to search-again in all files in Git
 func! GitGrep(...)
   let save = &grepprg
   set grepprg=git\ grep\ -n\ $*
@@ -793,44 +633,36 @@ func! GitGrep(...)
   let &grepprg = save
 endfun
 command! -nargs=? GitGrep call GitGrep(<f-args>)
-nnoremap <F3> :cope \| GitGrep '<C-R>=substitute(substitute(substitute(@/,"'","'\\\\''","g"),"\|","\\\\\\\\\|","g"),"\\\\v","","g")<CR>'<Left><CR>
+nnoremap 1s :cope \| GitGrep '<C-R>=substitute(substitute(substitute(@/,"'","'\\\\''","g"),"\|","\\\\\\\\\|","g"),"\\\\v","","g")<CR>'<Left><CR>
 
-" F4 to resume a screen
-nnoremap <F4> :!screen -r<CR>
+" 1h to temporarily disable highlighing
+noremap 1h :nohls<CR>
 
-" F5 runs make
-nnoremap <F5> :mak<up><CR>
+" 1p to run the selected PHP code and replace it with the results
+nnoremap 1p gv:!php -a \| tail -n +3<CR>
+vnoremap 1p :!php -a \| tail -n +3<CR>
 
-" F6 to temporarily disable highlighing
-noremap <F6> :nohls<CR>
+" 1y for python
+autocmd vimrc FileType python nnoremap 1y gv:!python -i 2>/dev/null<CR>
+autocmd vimrc FileType python vnoremap 1y :!python -i 2>/dev/null<CR>
 
-" Press F7 to run the selected PHP code and replace it with the results
-nnoremap <F7> gv:!php -a \| tail -n +3<CR>
-vnoremap <F7> :!php -a \| tail -n +3<CR>
+" 1<space> toggle paste / nopaste
+set pastetoggle=1<space>
 
-autocmd vimrc FileType python nnoremap <F7> gv:!python -i 2>/dev/null<CR>
-autocmd vimrc FileType python vnoremap <F7> :!python -i 2>/dev/null<CR>
+" 1w toggle line wrapping
+nnoremap 1w :set wrap!<CR>
 
-" F8 toggle paste / nopaste
-set pastetoggle=<F8>
+" 1l toggle list chars
+nnoremap 1l :set list!<CR>
 
-" F9 toggle line wrapping
-nnoremap <F9> :set wrap!<CR>
+" 1m counts matches (depends on default /g!)
+nnoremap 1m :%s///n<CR>
 
-" F10 toggle list chars
-nnoremap <F10> :set list!<CR>
+" 1n inserts incrementing numbers in front of all current search matches
+nnoremap 1n :let i=1 \| g~\(<C-R>/\)\@=~s~~\=printf("%02d",i)~ \| let i=i+1
 
-" F11 counts matches (depends on default /g!)
-nnoremap <F11> :%s///n<CR>
-
-" F12 for reformatting a csv file
-nnoremap <F12> :%s@\v^([^,]*),([^,]*),([^,]*)$@\1 \2 \3
-
-" C-F12 inserts incrementing numbers in front of all current search matches
-nnoremap <C-F12> :let i=1 \| g~\(<C-R>/\)\@=~s~~\=printf("%02d",i)~ \| let i=i+1
-
-" g<F12> to view current buffer in Chromium w/ syntax colors
-nnoremap g<F12> :TOhtml<CR>:w! /tmp/to.html<CR>:q!<CR>:!chromium-browser /tmp/to.html<CR>
+" 1t to view current buffer in Chromium w/ syntax colors
+nnoremap 1t :TOhtml<CR>:w! /tmp/to.html<CR>:q!<CR>:!chromium-browser /tmp/to.html<CR>
 
 " Columnize
 function! Columnize(...) range abort
@@ -888,7 +720,7 @@ noremap <C-S> :call Columnize()<CR>
 
 " LEADERS!
 
-" <leader>c
+" <leader>g
 " and
 " <leader>u
 " are in use ABOVE ^^
@@ -911,23 +743,16 @@ nmap <leader>T i_<esc>lf#x,xhveolS}gvS}gvS}Xn
 " where's my digraphs?!
 nnoremap <leader>d :h digraph-table<CR>
 
-" add modeline (Vim reads this as a real modeline in THIS file if we aren't careful!)
-nnoremap <leader>w Go// vim: ts=4 sw=4 et<Esc>:set ts=4 sw=4 et<CR>
-" modeline buffer
-" modeline buffer
-" modeline buffer
-" modeline buffer
-" modeline buffer
-" modeline buffer
-
 " run some spartors
-nnoremap <leader>2 :!./spartor console window_2 winpos_0_0 listen 2>host.log &<CR>
+nnoremap <leader>2 :!killall spartor<CR>
+                  \:!./spartor console window_2 winpos_0_0 listen 2>host.log &<CR>
                   \:!./spartor console window_2 winpos_1100_0 connect 2>client.log &<CR><CR>
-nnoremap <leader>3 :!./spartor console window_2 winpos_0_0 listen 2>host.log &<CR>
+nnoremap <leader>3 :!killall spartor<CR>
+                  \:!./spartor console window_2 winpos_0_0 listen 2>host.log &<CR>
                   \:!valgrind ./spartor console window_2 winpos_1100_0 connect<CR>
-nnoremap <leader>4 :!./spartor console window_2 winpos_1100_0 connect 2>client.log &<CR>
+nnoremap <leader>4 :!killall spartor<CR>
+                  \:!./spartor console window_2 winpos_1100_0 connect 2>client.log &<CR>
                   \:!valgrind ./spartor console window_2 winpos_0_0 listen<CR>
-nnoremap <leader>k :!killall spartor<CR><CR>
 
 nnoremap gb :cal SwapParams('left')<CR>
 nnoremap gs :cal SwapParams('right')<CR>
